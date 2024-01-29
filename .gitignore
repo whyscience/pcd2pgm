@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+/pcd2pgm/cmake-build-debug/
+/pcd2pgm/.idea/
