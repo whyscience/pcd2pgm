@@ -1,48 +1,46 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 project(pcd2pgm)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+# Default to C++14
+if (NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif ()
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  nav_msgs
-  pcl_ros
-  roscpp
-  rospy
-  std_msgs
-  geometry_msgs
-  sensor_msgs
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif ()
+
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(pcl_ros REQUIRED)
+find_package(pcl_conversions  REQUIRED)
+#find_package(PCL REQUIRED COMPONENTS common io) # You might need to specify the PCL components you use
+
+# Include directories
+include_directories(include ${PCL_INCLUDE_DIRS})
+
+# Declare a C++ executable
+add_executable(pcd2pgm src/test.cpp)
+ament_target_dependencies(pcd2pgm
+        rclcpp
+        sensor_msgs
+        nav_msgs
+        pcl_ros
+        pcl_conversions
 )
 
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES pcd2pgm
-#  CATKIN_DEPENDS nav_msgs pcl roscpp rospy std_msgs
-#  DEPENDS system_lib
-)
+# Specify libraries to link a library or executable target against
+#target_link_libraries(pcd2pgm ${PCL_LIBRARIES})
 
-###########
-## Build ##
-###########
+# Install targets
+install(TARGETS pcd2pgm
+        DESTINATION lib/${PROJECT_NAME})
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
+# Export dependencies
+ament_export_dependencies(rclcpp sensor_msgs nav_msgs pcl_ros pcl_conversions)
 
-find_package(PCL REQUIRED)
-
-include_directories(
-  include
-		${PCL_INCLUDE_DIRS})
-
-
-add_executable(pcd2topic src/test.cpp)
-target_link_libraries(pcd2topic ${catkin_LIBRARIES} ${PCL_LIBRARIES}   )
-
-
+ament_package()
