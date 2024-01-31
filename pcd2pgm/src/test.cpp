@@ -1,17 +1,17 @@
 #include <ros/ros.h>
 
 #include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/GetMap.h>
+//#include <nav_msgs/GetMap.h>
 
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl_conversions/pcl_conversions.h>
+//#include <pcl_conversions/pcl_conversions.h>
 
 #include <pcl/point_types.h>
 #include <pcl/filters/passthrough.h>  //直通滤波器头文件
 #include <pcl/filters/voxel_grid.h>  //体素滤波器头文件
-#include <pcl/filters/statistical_outlier_removal.h>   //统计滤波器头文件
-#include <pcl/filters/conditional_removal.h>    //条件滤波器头文件
+//#include <pcl/filters/statistical_outlier_removal.h>   //统计滤波器头文件
+//#include <pcl/filters/conditional_removal.h>    //条件滤波器头文件
 #include <pcl/filters/radius_outlier_removal.h>   //半径滤波器头文件
 
 std::string file_directory;
@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
     pcd_file = file_directory + file_name + pcd_format;
     ROS_INFO("*** pcd_file = %s ***\n", pcd_file.c_str());
 
-    private_nh.param("thre_z_min", thre_z_min, 0.5);
-    private_nh.param("thre_z_max", thre_z_max, 2.0);
+    private_nh.param("thre_z_min", thre_z_min, 0.4);
+    private_nh.param("thre_z_max", thre_z_max, 0.5);
     private_nh.param("flag_pass_through", flag_pass_through, 0);
     private_nh.param("grid_x", grid_x, 0.1);
     private_nh.param("grid_y", grid_y, 0.1);
