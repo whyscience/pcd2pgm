@@ -12,7 +12,7 @@
 #include <pcl/filters/radius_outlier_removal.h>  // 半径滤波器头文件
 
 #include <string>
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include <random>
 
 
@@ -220,7 +220,6 @@ private:
         // 填充地图数据，这里以0填充表示所有区域都是自由的
         message.data.resize(message.info.width * message.info.height, 0);
 
-        // TODO: 根据实际情况填充地图数据
         // 随机填充地图数据
         std::default_random_engine generator;
         std::uniform_int_distribution<int> distribution(-1, 100);
@@ -239,7 +238,7 @@ private:
         map_topic_pub->publish(message);
       }
 
-    void visualizeOccupancyGrid(const nav_msgs::msg::OccupancyGrid& msg) {
+    /*void visualizeOccupancyGrid(const nav_msgs::msg::OccupancyGrid& msg) {
         int width = msg.info.width;
         int height = msg.info.height;
         auto map_data = msg.data;
@@ -264,7 +263,7 @@ private:
         // 显示图像
         cv::imshow("OccupancyGrid", img);
         cv::waitKey(1000); // 等待用户按键
-    }
+    }*/
 };
 
 int main(int argc, char **argv) {
