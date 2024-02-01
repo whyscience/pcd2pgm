@@ -19,9 +19,11 @@ find_package(nav_msgs REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions  REQUIRED)
 #find_package(PCL REQUIRED COMPONENTS common io) # You might need to specify the PCL components you use
+find_package(OpenCV REQUIRED)
 
 # Include directories
 include_directories(include ${PCL_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Declare a C++ executable
 add_executable(pcd2pgm src/test.cpp)
@@ -35,6 +37,7 @@ ament_target_dependencies(pcd2pgm
 
 # Specify libraries to link a library or executable target against
 #target_link_libraries(pcd2pgm ${PCL_LIBRARIES})
+target_link_libraries(pcd2pgm ${OpenCV_LIBRARIES})
 
 # Install targets
 install(TARGETS pcd2pgm

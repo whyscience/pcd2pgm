@@ -12,6 +12,10 @@
 #include <pcl/filters/radius_outlier_removal.h>  // 半径滤波器头文件
 
 #include <string>
+#include <opencv2/opencv.hpp>
+#include <random>
+
+
 
 class PCLFiltersNode : public rclcpp::Node {
 public:
@@ -19,7 +23,7 @@ public:
                        cloud_after_Radius(new pcl::PointCloud<pcl::PointXYZ>),
                        cloud_after_PassThrough(new pcl::PointCloud<pcl::PointXYZ>) {
         this->declare_parameter<std::string>("file_directory",
-                                             "/home/eric/ws_fast_lio2/src/FAST_LIO_ROS2/FAST_LIO/PCD/");
+                                             "/home/eric/Desktop/");
         this->declare_parameter<std::string>("file_name", "result");
         this->declare_parameter<double>("thre_z_min", 0.4);
         this->declare_parameter<double>("thre_z_max", 0.5);
@@ -105,6 +109,7 @@ private:
         //if (map_topic_pub->get_subscription_count() > 0) {
         if (!map_topic_msg.data.empty()) {
             map_topic_pub->publish(map_topic_msg);
+            //publishOccupancyGrid();
             //std::cout << "map_topic_msg.data.size() = " << map_topic_msg.data.size() << std::endl;
         }
         //}
@@ -134,7 +139,8 @@ private:
         RCLCPP_INFO(rclcpp::get_logger("pcl"), "半径滤波后点云数据点数：%zu", cloud_after_Radius->points.size());
     }
 
-    void SetMapTopicMsg(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, nav_msgs::msg::OccupancyGrid &msg) const {
+    void SetMapTopicMsg(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, nav_msgs::msg::OccupancyGrid &msg) {
+        //msg.header.seq = 0;
         msg.header.stamp = rclcpp::Clock().now();
         msg.header.frame_id = "map";
 
@@ -146,14 +152,22 @@ private:
         }
 
         // 计算点云边界
-        x_min = x_max = cloud->points[0].x;
-        y_min = y_max = cloud->points[0].y;
-        for (const auto &point: cloud->points) {
-            x_min = std::min(x_min, point.x);
-            x_max = std::max(x_max, point.x);
-            y_min = std::min(y_min, point.y);
-            y_max = std::max(y_max, point.y);
+        for (unsigned int i = 0; i < cloud->points.size() - 1; i++) {
+            if (i == 0) {
+                x_min = x_max = cloud->points[i].x;
+                y_min = y_max = cloud->points[i].y;
+            }
+
+            float x = cloud->points[i].x;
+            float y = cloud->points[i].y;
+
+            if (x < x_min) x_min = x;
+            if (x > x_max) x_max = x;
+
+            if (y < y_min) y_min = y;
+            if (y > y_max) y_max = y;
         }
+        std::cout << "x_min = " << x_min << ", x_max = " << x_max << std::endl;
 
         msg.info.origin.position.x = x_min;
         msg.info.origin.position.y = y_min;
@@ -163,10 +177,12 @@ private:
         msg.info.origin.orientation.z = 0.0;
         msg.info.origin.orientation.w = 1.0;
 
+        msg.info.resolution = map_resolution;
         msg.info.width = static_cast<uint32_t>((x_max - x_min) / map_resolution);
         msg.info.height = static_cast<uint32_t>((y_max - y_min) / map_resolution);
 
         msg.data.resize(msg.info.width * msg.info.height, -1); // Initialize with -1 for unknown
+        msg.data.assign(msg.info.width * msg.info.height, 0);
         RCLCPP_INFO(rclcpp::get_logger("pcl"), "data size = %zu", msg.data.size());
 
         // 点云到栅格地图的转换略去，根据实际需要填充msg.data
@@ -179,9 +195,75 @@ private:
 
             msg.data[i + j * msg.info.width] = 100;
             //msg.data[i + j * msg.info.width] = int(255 * (cloud->points[iter].z * k_line + b_line)) % 255;
-            std::cout << "(" << i << "," << j << "), ";
+            //std::cout << "(" << i << "," << j << "), ";
         }
         std::cout << "msg.info.width = " << msg.info.width << std::endl;
+        //visualizeOccupancyGrid(msg);
+    }
+
+    void publishOccupancyGrid(){
+        auto message = nav_msgs::msg::OccupancyGrid();
+        // 填充header信息
+        message.header.stamp = this->get_clock()->now();
+        message.header.frame_id = "map";
+
+        // 填充地图信息，例如地图分辨率、宽度、高度等
+        message.info.resolution = 0.1; // 假设每个单元格代表0.1m
+        message.info.width = 100;       // 100单元格宽
+        message.info.height = 100;      // 100单元格高
+        // 设置地图的原点，通常是在地图的左下角
+        message.info.origin.position.x = 0.0;
+        message.info.origin.position.y = 0.0;
+        message.info.origin.position.z = 0.0;
+        message.info.origin.orientation.w = 1.0;
+
+        // 填充地图数据，这里以0填充表示所有区域都是自由的
+        message.data.resize(message.info.width * message.info.height, 0);
+
+        // TODO: 根据实际情况填充地图数据
+        // 随机填充地图数据
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> distribution(-1, 100);
+        for(auto& value : message.data) {
+          int dice_roll = distribution(generator); // 生成-1到100之间的随机数
+          // 将随机值归一化到-1, 0, 100
+          if (dice_roll < 33) {
+            value = -1; // 未知区域
+          } else if (dice_roll < 66) {
+            value = 0;  // 自由区域
+          } else {
+            value = 100; // 占用区域
+          }
+        }
+
+        map_topic_pub->publish(message);
+      }
+
+    void visualizeOccupancyGrid(const nav_msgs::msg::OccupancyGrid& msg) {
+        int width = msg.info.width;
+        int height = msg.info.height;
+        auto map_data = msg.data;
+
+        // 创建一个黑白图像，每个像素对应一个栅格
+        cv::Mat img(height, width, CV_8UC1);
+
+        // 填充图像
+        for(int i = 0; i < height; ++i) {
+            for(int j = 0; j < width; ++j) {
+                int index = i * width + j;
+                if(map_data[index] == 0) { // Free space
+                    img.at<uchar>(i, j) = 255; // 白色
+                } else if(map_data[index] == 100) { // Occupied space
+                    img.at<uchar>(i, j) = 0; // 黑色
+                } else { // Unknown space
+                    img.at<uchar>(i, j) = 127; // 灰色
+                }
+            }
+        }
+
+        // 显示图像
+        cv::imshow("OccupancyGrid", img);
+        cv::waitKey(1000); // 等待用户按键
     }
 };
 
