@@ -49,15 +49,15 @@ public:
         map_topic_pub = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 10);
 
         //subscribe to the point cloud topic and run the filter
-        auto point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                "point_cloud", 10, std::bind(&PCLFiltersNode::point_cloud_callback, this, std::placeholders::_1));
+        point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+                "/Laser_map", 10, std::bind(&PCLFiltersNode::point_cloud_callback, this, std::placeholders::_1));
 
         //create a map_pub_timer to publish the map
-        map_pub_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
-                                                std::bind(&PCLFiltersNode::publish_map, this));
+        //map_pub_timer = this->create_wall_timer(std::chrono::milliseconds(1000),
+        //                                        std::bind(&PCLFiltersNode::publish_map, this));
 
-        load_pcd_file();
-        run_filter();
+        //load_pcd_file();
+        //run_filter();
     }
 
 private:
@@ -76,6 +76,7 @@ private:
     double thre_radius = 0.1;
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_topic_pub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
     rclcpp::TimerBase::SharedPtr map_pub_timer; // 定时器的句柄
     pcl::PointCloud<pcl::PointXYZ>::Ptr pcd_cloud;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_after_Radius;
@@ -92,9 +93,10 @@ private:
     }
 
     void point_cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-        RCLCPP_INFO(this->get_logger(), "Received point cloud message");
+        //RCLCPP_INFO(this->get_logger(), "Received point cloud message");
         pcl::fromROSMsg(*msg, *pcd_cloud);
         run_filter();
+        publish_map();
     }
 
     void run_filter() {
@@ -167,7 +169,7 @@ private:
             if (y < y_min) y_min = y;
             if (y > y_max) y_max = y;
         }
-        std::cout << "x_min = " << x_min << ", x_max = " << x_max << std::endl;
+        //std::cout << "x_min = " << x_min << ", x_max = " << x_max << std::endl;
 
         msg.info.origin.position.x = x_min;
         msg.info.origin.position.y = y_min;
@@ -183,9 +185,9 @@ private:
 
         msg.data.resize(msg.info.width * msg.info.height, -1); // Initialize with -1 for unknown
         msg.data.assign(msg.info.width * msg.info.height, 0);
-        RCLCPP_INFO(rclcpp::get_logger("pcl"), "data size = %zu", msg.data.size());
 
         // 点云到栅格地图的转换略去，根据实际需要填充msg.data
+        int count = 0;
         for (auto &point: cloud->points) {
             int i = int((point.x - x_min) / map_resolution);
             if (i < 0 || i >= (int) msg.info.width) continue;
@@ -196,8 +198,10 @@ private:
             msg.data[i + j * msg.info.width] = 100;
             //msg.data[i + j * msg.info.width] = int(255 * (cloud->points[iter].z * k_line + b_line)) % 255;
             //std::cout << "(" << i << "," << j << "), ";
+            count++;
         }
-        std::cout << "msg.info.width = " << msg.info.width << std::endl;
+        //std::cout << "msg.info.width = " << msg.info.width << std::endl;
+        RCLCPP_INFO(rclcpp::get_logger("pcl"), "data size = %zu, valid = %d", msg.data.size(), count);
         //visualizeOccupancyGrid(msg);
     }
 

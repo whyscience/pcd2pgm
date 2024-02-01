@@ -22,7 +22,7 @@ find_package(pcl_conversions  REQUIRED)
 #find_package(OpenCV REQUIRED)
 
 # Include directories
-include_directories(include ${PCL_INCLUDE_DIRS})
+#include_directories(include ${PCL_INCLUDE_DIRS})
 #include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Declare a C++ executable
