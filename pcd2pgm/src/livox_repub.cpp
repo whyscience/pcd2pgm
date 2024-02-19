@@ -5,8 +5,6 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-using namespace std::chrono_literals; // For convenient time conversions
-
 // Point type definition (assuming PointXYZINormal is preferred)
 typedef pcl::PointXYZINormal PointType;
 
@@ -14,11 +12,11 @@ class LivoxRepub : public rclcpp::Node {
 public:
     LivoxRepub() : Node("livox_repub") {
         // Initialize subscriber and publisher
-        sub_livox_msg1_ = create_subscription<livox_ros_driver2::msg::CustomMsg>(
+        sub_livox_msg_ = create_subscription<livox_ros_driver2::msg::CustomMsg>(
                 "/livox/lidar", 10,
                 std::bind(&LivoxRepub::LivoxMsgCbk1, this, std::placeholders::_1));
-        pub_pcl_out1_ = create_publisher<sensor_msgs::msg::PointCloud2>(
-                "/livox_pcl0", 10);
+        pub_pcl_out_ = create_publisher<sensor_msgs::msg::PointCloud2>(
+                "/livox_pcl", 10);
 
         // Initialize transform broadcaster
         broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -33,6 +31,7 @@ private:
     }
 
     void LivoxMsgCbk1(const livox_ros_driver2::msg::CustomMsg::SharedPtr livox_msg) {
+        RCLCPP_INFO(this->get_logger(), "Received first LiDAR message");
         // Collect all LiDAR scans for merging (if applicable)
         // ... (replace with appropriate merging logic if needed)
 
@@ -61,20 +60,22 @@ private:
         pcl::toROSMsg(*pcl_in, pcl_ros_msg);
 
         // Set timestamp based on LiDAR message
-        pcl_ros_msg.header.stamp = get_ros_time(livox_msg->timebase);
+        //pcl_ros_msg.header.stamp = get_ros_time(livox_msg->timebase);
+        pcl_ros_msg.header.stamp = this->get_clock()->now();
 
         // Set frame_id (adjust if needed)
-        pcl_ros_msg.header.frame_id = "livox";
+        //pcl_ros_msg.header.frame_id = "livox";
+        pcl_ros_msg.header.frame_id = "map";
 
         // Publish the converted PointCloud
-        pub_pcl_out1_->publish(pcl_ros_msg);
+        pub_pcl_out_->publish(pcl_ros_msg);
 
         // Optionally, broadcast a TF transform (replace with appropriate logic)
         // ...
     }
 
-    rclcpp::Subscription<livox_ros_driver2::msg::CustomMsg>::SharedPtr sub_livox_msg1_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_pcl_out1_;
+    rclcpp::Subscription<livox_ros_driver2::msg::CustomMsg>::SharedPtr sub_livox_msg_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_pcl_out_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
 };
 
