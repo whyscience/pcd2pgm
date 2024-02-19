@@ -31,7 +31,7 @@ private:
     }
 
     void LivoxMsgCbk1(const livox_ros_driver2::msg::CustomMsg::SharedPtr livox_msg) {
-        RCLCPP_INFO(this->get_logger(), "Received first LiDAR message");
+        RCLCPP_INFO_ONCE(this->get_logger(), "Received first LiDAR message");
         // Collect all LiDAR scans for merging (if applicable)
         // ... (replace with appropriate merging logic if needed)
 
