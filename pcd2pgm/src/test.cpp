@@ -16,7 +16,6 @@
 #include <random>
 
 
-
 class PCLFiltersNode : public rclcpp::Node {
 public:
     PCLFiltersNode() : Node("pcl_filters"), pcd_cloud(new pcl::PointCloud<pcl::PointXYZ>),
@@ -205,7 +204,7 @@ private:
         //visualizeOccupancyGrid(msg);
     }
 
-    void publishOccupancyGrid(){
+    void publishOccupancyGrid() {
         auto message = nav_msgs::msg::OccupancyGrid();
         // 填充header信息
         message.header.stamp = this->get_clock()->now();
@@ -227,20 +226,20 @@ private:
         // 随机填充地图数据
         std::default_random_engine generator;
         std::uniform_int_distribution<int> distribution(-1, 100);
-        for(auto& value : message.data) {
-          int dice_roll = distribution(generator); // 生成-1到100之间的随机数
-          // 将随机值归一化到-1, 0, 100
-          if (dice_roll < 33) {
-            value = -1; // 未知区域
-          } else if (dice_roll < 66) {
-            value = 0;  // 自由区域
-          } else {
-            value = 100; // 占用区域
-          }
+        for (auto &value: message.data) {
+            int dice_roll = distribution(generator); // 生成-1到100之间的随机数
+            // 将随机值归一化到-1, 0, 100
+            if (dice_roll < 33) {
+                value = -1; // 未知区域
+            } else if (dice_roll < 66) {
+                value = 0;  // 自由区域
+            } else {
+                value = 100; // 占用区域
+            }
         }
 
         map_topic_pub->publish(message);
-      }
+    }
 
     /*void visualizeOccupancyGrid(const nav_msgs::msg::OccupancyGrid& msg) {
         int width = msg.info.width;

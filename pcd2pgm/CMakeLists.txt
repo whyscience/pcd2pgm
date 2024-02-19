@@ -18,8 +18,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions  REQUIRED)
-#find_package(PCL REQUIRED COMPONENTS common io) # You might need to specify the PCL components you use
-#find_package(OpenCV REQUIRED)
+find_package(livox_ros_driver2 REQUIRED)
 
 # Include directories
 #include_directories(include ${PCL_INCLUDE_DIRS})
@@ -35,15 +34,22 @@ ament_target_dependencies(pcd2pgm
         pcl_conversions
 )
 
-# Specify libraries to link a library or executable target against
-#target_link_libraries(pcd2pgm ${PCL_LIBRARIES})
-#target_link_libraries(pcd2pgm ${OpenCV_LIBRARIES})
+add_executable(livox_repub src/livox_repub.cpp)
+ament_target_dependencies(livox_repub
+        rclcpp
+        sensor_msgs
+        nav_msgs
+        pcl_ros
+        pcl_conversions
+        livox_ros_driver2
+)
+
 
 # Install targets
-install(TARGETS pcd2pgm
+install(TARGETS pcd2pgm livox_repub
         DESTINATION lib/${PROJECT_NAME})
 
 # Export dependencies
-ament_export_dependencies(rclcpp sensor_msgs nav_msgs pcl_ros pcl_conversions)
+ament_export_dependencies(rclcpp sensor_msgs nav_msgs pcl_ros pcl_conversions livox_ros_driver2)
 
 ament_package()
